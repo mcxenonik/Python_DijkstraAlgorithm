@@ -6,90 +6,116 @@ from pqdict import PQDict
 
 def read_table_from_file(filename):
     with open(filename, "r") as file:
-        text_graph = ""
+        table_str = ""
 
         for line in file:
-            text_graph += line.replace("\n", "")
+            table_str += line.replace("\n", "")
 
+        table = [int(value) for value in table_str]
         table_width = len(line)
 
-    return text_graph, table_width
+    return table, table_width
 
 
-def build_graph(text_graph, table_width):
-    num_of_nodes = len(text_graph)
-    list_of_nodes = []
+def build_graph(table, table_width):
+    number_of_nodes = len(table)
     end_nodes = []
     graph = {}
 
-    for i in range(num_of_nodes):
-        node = Node(i, int(text_graph[i]))
-        list_of_nodes.append(node)
+    for id in range(number_of_nodes):
+        node = Node(id, table[id])
         graph[node.id] = []
 
         if(node.value == 0):
-            end_nodes.append(node.id)
+            end_nodes.append(node)
 
         for j in range(0, 4):
-            if(j == 0 and ((i + 1) % table_width != 0) and i + 1 < num_of_nodes):
-                neighbour = Node(i + 1, int(text_graph[i + 1]))
-                graph[node.id].append((neighbour.id, neighbour.value))
+            if (j == 0 and ((id + 1) % table_width != 0) and id + 1 < number_of_nodes):
+                neighbour = Node(id + 1, table[id + 1])
+                graph[node.id].append(neighbour)
 
-            elif(j == 1 and i + table_width < num_of_nodes):
-                neighbour = Node(i + table_width, int(text_graph[i + table_width]))
-                graph[node.id].append((neighbour.id, neighbour.value))
+            elif (j == 1 and id + table_width < number_of_nodes):
+                neighbour = Node(id + table_width, table[id + table_width])
+                graph[node.id].append(neighbour)
 
-            elif(j == 2 and (i % table_width != 0) and i - 1 >= 0):
-                neighbour = Node(i - 1, int(text_graph[i - 1]))
-                graph[node.id].append((neighbour.id, neighbour.value))
+            elif (j == 2 and (id % table_width != 0) and id - 1 >= 0):
+                neighbour = Node(id - 1, table[id - 1])
+                graph[node.id].append(neighbour)
 
-            elif(j == 3 and i - table_width >= 0):
-                neighbour = Node(i - table_width, int(text_graph[i - table_width]))
-                graph[node.id].append((neighbour.id, neighbour.value))
+            elif (j == 3 and id - table_width >= 0):
+                neighbour = Node(id - table_width, table[id - table_width])
+                graph[node.id].append(neighbour)
 
-    return graph, list_of_nodes, end_nodes
+    return graph, end_nodes
 
 
-def shortest_path_dijkstra(start_node, end_node, graph):
-    dist = {}
-    dist[start_node] = 0
+def dijkstra_algorithm(start_node, end_node, graph):
+    distance = {}
+    distance[start_node.id] = 0
 
     queueDijkstra = PQDict()
-    queueDijkstra[start_node] = 0
+    queueDijkstra[start_node.id] = 0
 
-    prev_on_path = {}
+    previous_on_path = {}
 
     while (len(queueDijkstra) > 0):
-        v, _ = queueDijkstra.popitem()
+        node_id, _ = queueDijkstra.popitem()
 
-        for neighbour, cost in graph[v]:
-            if (neighbour not in dist or dist[neighbour] > dist[v] + cost):
-                dist[neighbour] = dist[v] + cost
-                prev_on_path[neighbour] = v
-                queueDijkstra[neighbour] = dist[neighbour]
+        for neighbour in graph[node_id]:
+            if (neighbour.id not in distance or distance[neighbour.id] > distance[node_id] + neighbour.value):
+                distance[neighbour.id] = distance[node_id] + neighbour.value
+                previous_on_path[neighbour.id] = node_id
+                queueDijkstra[neighbour.id] = distance[neighbour.id]
 
     shortest_path = []
-    current_node = end_node
+    current_node_id = end_node.id
 
-    while current_node != start_node:
-        shortest_path.append(current_node)
-        current_node = prev_on_path[current_node]
+    while (current_node_id != start_node.id):
+        shortest_path.append(current_node_id)
+        current_node_id = previous_on_path[current_node_id]
 
-    shortest_path.append(start_node)
+    shortest_path.append(start_node.id)
     shortest_path.reverse()
 
     return shortest_path
 
 
-def prepare_result(list_of_nodes, shortest_path, table_width):
+def prepare_result(table, table_width, shortest_path):
     result = ""
-    for node in list_of_nodes:
-        if (node.id in shortest_path):
-            result += str(node.value)
+    for id in range(len(table)):
+        if (id in shortest_path):
+            result += str(table[id])
         else:
             result += " "
 
-        if ((node.id + 1) % table_width == 0):
+        if ((id + 1) % table_width == 0):
+            result += "\n"
+
+    return result
+
+
+# def prepare_result2(table_list, list_of_nodes, shortest_path, table_width):
+#     result = ""
+
+#     for node_id in shortest_path:
+#         table_list[node_id] = "*"
+
+#     for id in range(len(table_list)):
+#        if ((id + 1) % table_width == 0):
+#            table_list.insert(id + 1, "\n")
+
+#     return result.join(table_list)
+
+
+def prepare_result2(table, table_width, shortest_path):
+    result = ""
+    for id in range(len(table)):
+        if (id in shortest_path):
+            result += str(table[id])
+        else:
+            result += " "
+
+        if ((id + 1) % table_width == 0):
             result += "\n"
 
     return result
@@ -102,10 +128,11 @@ if __name__ == "__main__":
 
     table, table_width = read_table_from_file(args.filename)
 
-    graph, list_of_nodes, end_nodes = build_graph(table, table_width)
+    graph, end_nodes = build_graph(table, table_width)
 
-    shortest_path = shortest_path_dijkstra(end_nodes[0], end_nodes[1], graph)
+    shortest_path = dijkstra_algorithm(end_nodes[0], end_nodes[1], graph)
 
-    result = prepare_result(list_of_nodes, shortest_path, table_width)
+    # result = prepare_result(table, table_width, shortest_path)
+    result = prepare_result2(table, table_width, shortest_path)
  
     print(result)
