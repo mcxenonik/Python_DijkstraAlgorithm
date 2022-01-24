@@ -93,33 +93,6 @@ def prepare_result(table, table_width, shortest_path):
     return result
 
 
-def prepare_result2(table, table_width, shortest_path):
-    result = ""
-
-    # print(shortest_path)
-
-    for id in range(len(table)):
-        if (id in shortest_path):
-
-            if (shortest_path.index(id) == 0 or shortest_path.index(id) == len(shortest_path) - 1):
-                result += "@"
-            else:
-
-                diff = id - shortest_path[shortest_path.index(id) - 1]
-                if (abs(diff) == 1):
-                    result += "-"
-                else:
-                    result += "|"
-
-        else:
-            result += str(table[id])
-
-        if ((id + 1) % table_width == 0):
-            result += "\n"
-
-    return result
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Dijkstra Algorithm")
     parser.add_argument("filename", help="Name of file to load")
